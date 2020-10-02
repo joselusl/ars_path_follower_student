@@ -228,6 +228,11 @@ class ArsPathFollower:
 
           # TODO by STUDENT!!
 
+          # Note: you can use the following helpers
+          #
+          # ars_lib_helpers.PoseAlgebra.computePoseSimpDifference(posi_1, atti_quat_simp_1, posi_2, atti_quat_simp_2)
+          # ars_lib_helpers.PoseAlgebra.computeScalarDiffFromDiffQuatSimp(delta_atti_quat_simp)
+
 
           ######    
 
