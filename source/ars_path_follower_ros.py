@@ -14,6 +14,7 @@ import rospy
 
 import rospkg
 
+import std_msgs.msg
 from std_msgs.msg import Header
 
 import geometry_msgs.msg
@@ -23,10 +24,6 @@ from geometry_msgs.msg import TwistStamped
 
 import nav_msgs.msg
 from nav_msgs.msg import Path
-
-import visualization_msgs.msg
-from visualization_msgs.msg import MarkerArray
-from visualization_msgs.msg import Marker
 
 
 import tf_conversions

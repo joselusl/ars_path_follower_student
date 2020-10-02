@@ -16,10 +16,6 @@ import tf_conversions as tf
 import nav_msgs.msg
 from nav_msgs.msg import Path
 
-import visualization_msgs.msg
-from visualization_msgs.msg import MarkerArray
-from visualization_msgs.msg import Marker
-
 
 
 #
