@@ -30,12 +30,6 @@ class ArsPathFollower:
 
   #######
 
-  # Robot size radius
-  robot_size_radius = 0.3
-
-  #
-  safety_distance = 0.5
-
   #
   flag_set_robot_hover = False
 
@@ -73,9 +67,6 @@ class ArsPathFollower:
   robot_traj = None
   traj_keypoint = 0
 
-
-  # Input: Obstacles detected
-  obstacles_detected_msg = None
 
 
   # Tol
