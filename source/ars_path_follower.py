@@ -220,8 +220,17 @@ class ArsPathFollower:
           # ars_lib_helpers.PoseAlgebra.computePoseSimpDifference(posi_1, atti_quat_simp_1, posi_2, atti_quat_simp_2)
           # ars_lib_helpers.PoseAlgebra.computeScalarDiffFromDiffQuatSimp(delta_atti_quat_simp)
 
+          # Variables to use
+          # self.robot_traj, self.traj_keypoint
+          # self.robot_posi, self.robot_atti_quat_simp
+          # self.tol_posi, error_att_z<self.tol_angle
 
-          ######    
+
+          ######
+
+
+          # Set ctr cmd
+          self.setCmdRef() 
 
 
     return
