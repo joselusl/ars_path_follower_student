@@ -71,7 +71,6 @@ class ArsPathFollower:
 
 
   # Tol
-  # TODO BY STUDENT (find a value)
   tol_posi = 0.0
   tol_angle = 0.0
   
@@ -122,6 +121,7 @@ class ArsPathFollower:
 
 
     # Tol
+    # TODO BY STUDENT (find a good value)
     self.tol_posi = 0.1
     self.tol_angle = 0.1
 
