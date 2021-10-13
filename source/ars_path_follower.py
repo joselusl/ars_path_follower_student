@@ -6,15 +6,13 @@ from numpy import *
 import os
 
 
+import threading
+from threading import Timer, Thread, Event
+
+
 # ROS
 
 import rospy
-
-import tf_conversions as tf
-
-
-import nav_msgs.msg
-from nav_msgs.msg import Path
 
 
 
@@ -31,7 +29,7 @@ class ArsPathFollower:
   #######
 
   #
-  flag_set_robot_hover = False
+  flag_set_robot_hover = True
 
 
   # Output: Pose, Velocity & Robot commands References
@@ -65,15 +63,18 @@ class ArsPathFollower:
   # Input: Trajectory reference
   flag_set_robot_traj = False
   robot_traj = None
-  traj_keypoint = 0
+  robot_traj_waypoint_idx = 0
 
+
+  # Timer
+  timer_reach_waypoint = None
 
 
   # Tol
-  tol_posi = 0.1
-  tol_angle = 0.1
+  # TODO BY STUDENT (find a value)
+  tol_posi = 0.0
+  tol_angle = 0.0
   
-
 
 
 
@@ -82,13 +83,13 @@ class ArsPathFollower:
   def __init__(self):
 
     #
-    self.flag_set_robot_hover = False
+    self.flag_set_robot_hover = True
 
     # Trajectory
     #
     self.flag_set_robot_traj = False
     self.robot_traj = []
-    self.traj_keypoint = 0
+    self.robot_traj_waypoint_idx = 0
 
     # Feedback
     #
@@ -114,6 +115,10 @@ class ArsPathFollower:
     self.flag_set_robot_velo_cmd_ref = False
     self.robot_velo_lin_cmd_ref = np.zeros((3,), dtype=float)
     self.robot_velo_ang_cmd_ref = np.zeros((1,), dtype=float)
+
+
+    # Timer
+    self.timer_reach_waypoint = None
 
 
     # Tol
@@ -145,9 +150,11 @@ class ArsPathFollower:
 
   def setRobotTrajectory(self, robot_traj):
 
+    print("New Trajectory set!")
+
     self.flag_set_robot_traj = True
 
-    self.traj_keypoint = 0
+    self.robot_traj_waypoint_idx = -1
 
     self.robot_traj = robot_traj
 
@@ -188,11 +195,47 @@ class ArsPathFollower:
 
       self.flag_set_robot_hover = False
 
+      self.advanceRobotTrajWaypoint()
+
     return
 
 
-  def pathPlannerLoop(self, time_stamp_current):
+  def timeoutReachRobotTrajWaypoint(self):
+    print("Waypoint " + str(self.robot_traj_waypoint_idx) + " Timed Out")
+    self.advanceRobotTrajWaypoint()
+    return
 
+
+  def advanceRobotTrajWaypoint(self):
+    if( self.robot_traj_waypoint_idx < len(self.robot_traj) ):
+      
+      # Cancel previous timer (if any)
+      if(self.timer_reach_waypoint):
+        self.timer_reach_waypoint.cancel()
+
+      # Advance waypoint
+      self.robot_traj_waypoint_idx+=1
+      if(self.robot_traj_waypoint_idx < len(self.robot_traj)):
+        print("Waypoint " + str(self.robot_traj_waypoint_idx) + " Next")
+
+      # Set timeout timer
+      ###### TODO By student
+      # Use: 
+      # self.robot_traj_waypoint_idx, self.robot_traj
+      # ars_lib_helpers.PoseAlgebra.computePoseSimpDifference()
+      # ars_lib_helpers.PoseAlgebra.computeScalarDiffFromDiffQuatSimp()
+      # self.timer_reach_waypoint
+      # self.timeoutReachRobotTrajWaypoint()
+      # threading.Timer()
+
+
+
+      ###########
+
+    return
+
+
+  def pathFollowerLoop(self, time_stamp_current):
 
     if(self.flag_set_robot_traj):
 
@@ -201,37 +244,49 @@ class ArsPathFollower:
         #
         if(not self.robot_traj):
 
-          #
+          # Empty trajectory
           self.setHoverMode()
 
         else:
 
-          #
+          # Trajectory is not empty
           self.setMoveMode()
 
 
-          ######
+          # Check if waypoint has been visited and advance to the next waypoint
+
+          ###### TODO By student
+          # Use: 
+          # self.robot_traj_waypoint_idx, self.robot_traj
+          # ars_lib_helpers.PoseAlgebra.computePoseSimpDifference()
+          # ars_lib_helpers.PoseAlgebra.computeScalarDiffFromDiffQuatSimp()
+          # self.tol_posi, self.tol_angle
+          # self.advanceRobotTrajWaypoint()
 
 
-          # TODO by STUDENT!!
 
-          # Note: you can use the following helpers
-          #
-          # ars_lib_helpers.PoseAlgebra.computePoseSimpDifference(posi_1, atti_quat_simp_1, posi_2, atti_quat_simp_2)
-          # ars_lib_helpers.PoseAlgebra.computeScalarDiffFromDiffQuatSimp(delta_atti_quat_simp)
-
-          # Variables to use
-          # self.robot_traj, self.traj_keypoint
-          # self.robot_posi, self.robot_atti_quat_simp
-          # self.tol_posi, error_att_z<self.tol_angle
-
-
-          ######
-
+          ###########
 
           # Set ctr cmd
-          self.setCmdRef() 
-
+          self.setCmdRef()     
 
     return
 
+
+  def setCmdRef(self):
+
+    if(self.robot_traj_waypoint_idx < len(self.robot_traj)):
+      self.flag_set_robot_pose_ref = True
+      self.robot_posi_ref = self.robot_traj[self.robot_traj_waypoint_idx].position
+      self.robot_atti_quat_simp_ref = self.robot_traj[self.robot_traj_waypoint_idx].attitude_quat_simp
+      #
+      self.flag_set_robot_velo_world_ref = True
+      self.robot_velo_lin_world_ref = np.zeros((3,), dtype=float)
+      self.robot_velo_ang_world_ref = np.zeros((1,), dtype=float)
+      #
+      self.flag_set_robot_velo_cmd_ref = True
+      self.robot_velo_lin_cmd_ref = np.zeros((3,), dtype=float)
+      self.robot_velo_ang_cmd_ref = np.zeros((1,), dtype=float)
+
+    #
+    return

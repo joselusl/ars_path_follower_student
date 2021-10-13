@@ -25,7 +25,6 @@ from geometry_msgs.msg import TwistStamped
 import nav_msgs.msg
 from nav_msgs.msg import Path
 
-
 import tf_conversions
 
 import tf2_ros
@@ -323,7 +322,7 @@ class ArsPathFollowerRos:
     time_stamp_current = rospy.Time.now()
 
     #
-    self.path_follower.pathPlannerLoop(time_stamp_current)
+    self.path_follower.pathFollowerLoop(time_stamp_current)
 
     # Publish
     if(self.path_follower.flag_set_robot_pose_ref):
