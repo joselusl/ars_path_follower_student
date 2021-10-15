@@ -158,6 +158,10 @@ class ArsPathFollower:
 
     self.robot_traj = robot_traj
 
+    # Cancel previous timer (if any)
+    if(self.timer_reach_waypoint):
+      self.timer_reach_waypoint.cancel()
+
     return
 
 
@@ -194,8 +198,6 @@ class ArsPathFollower:
       print("Path follower: Setting move mode")
 
       self.flag_set_robot_hover = False
-
-      self.advanceRobotTrajWaypoint()
 
     return
 
@@ -251,6 +253,10 @@ class ArsPathFollower:
 
           # Trajectory is not empty
           self.setMoveMode()
+
+          # Trajectory has not started
+          while(self.robot_traj_waypoint_idx<0):
+            self.advanceRobotTrajWaypoint()
 
 
           # Check if waypoint has been visited and advance to the next waypoint
