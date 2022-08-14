@@ -41,10 +41,6 @@ class ArsPathFollowerRos:
 
   #######
 
-
-  # Robot frame
-  robot_frame = 'robot_base_link'
-
   # World frame
   world_frame = 'world'
 
