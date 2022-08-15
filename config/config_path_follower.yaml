@@ -1,0 +1,7 @@
+path_follower:
+  world_frame: 'world'
+  ctr_cmd_loop_freq: 10.0
+  algorithm:
+    tol_posi: 0.1
+    tol_angle: 0.1
+  

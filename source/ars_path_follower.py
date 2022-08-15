@@ -121,12 +121,20 @@ class ArsPathFollower:
 
 
     # Tol
-    # TODO BY STUDENT (find a good value)
-    self.tol_posi = 0.1
-    self.tol_angle = 0.1
+    self.tol_posi = 0.0
+    self.tol_angle = 0.0
 
 
     # End
+    return
+
+
+  def setConfigParameters(self, config_param):
+
+    # Tol
+    self.tol_posi = config_param['tol_posi']
+    self.tol_angle = config_param['tol_angle']
+
     return
 
 

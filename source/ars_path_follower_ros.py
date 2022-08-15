@@ -5,7 +5,9 @@ from numpy import *
 
 import os
 
-
+# pyyaml - https://pyyaml.org/wiki/PyYAMLDocumentation
+import yaml
+from yaml.loader import SafeLoader
 
 
 # ROS
@@ -71,7 +73,10 @@ class ArsPathFollowerRos:
   robot_vel_cmd_ref_pub = None
 
 
-  # Motion controller
+  #
+  config_param = None
+
+  # Path follower
   path_follower = ArsPathFollower()
   
 
@@ -102,9 +107,36 @@ class ArsPathFollowerRos:
 
     #### READING PARAMETERS ###
     
-    # TODO
+    # Config param
+    default_config_param_yaml_file_name = os.path.join(pkg_path,'config','config_path_follower.yaml')
+    config_param_yaml_file_name_str = rospy.get_param('~config_param_path_follower_yaml_file', default_config_param_yaml_file_name)
+    print(config_param_yaml_file_name_str)
+    self.config_param_yaml_file_name = os.path.abspath(config_param_yaml_file_name_str)
 
     ###
+
+
+    # Load config param
+    with open(self.config_param_yaml_file_name,'r') as file:
+        # The FullLoader parameter handles the conversion from YAML
+        # scalar values to Python the dictionary format
+        self.config_param = yaml.load(file, Loader=SafeLoader)['path_follower']
+
+    if(self.config_param is None):
+      print("Error loading config param path follower")
+    else:
+      print("Config param path follower:")
+      print(self.config_param)
+
+
+    # Parameters
+    #
+    self.world_frame = self.config_param['world_frame']
+    #
+    self.ctr_cmd_loop_freq = self.config_param['ctr_cmd_loop_freq']
+    
+    #
+    self.path_follower.setConfigParameters(self.config_param['algorithm'])
 
     
     # End
