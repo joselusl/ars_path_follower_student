@@ -11,10 +11,11 @@ from yaml.loader import SafeLoader
 
 
 # ROS
+import rclpy
+from rclpy.node import Node
+from rclpy.time import Time
 
-import rospy
-
-import rospkg
+from ament_index_python.packages import get_package_share_directory
 
 import std_msgs.msg
 from std_msgs.msg import Header
@@ -29,32 +30,25 @@ from nav_msgs.msg import Path
 
 
 #
-from ars_path_follower import *
-
+import ars_lib_helpers.ars_lib_helpers as ars_lib_helpers
 
 #
-import ars_lib_helpers
+from ars_path_follower.ars_path_follower import *
 
 
 
-
-
-class ArsPathFollowerRos:
+class ArsPathFollowerRos(Node):
 
   #######
 
   # World frame
   world_frame = 'world'
 
-
-
   # Ctr command loop freq 
   # time step
   ctr_cmd_loop_freq = 10.0
   # Timer
   ctr_cmd_loop_timer = None
-
-
 
   # Robot traj subscriber
   robot_traj_sub = None
@@ -64,14 +58,12 @@ class ArsPathFollowerRos:
   # Robot velocity subscriber
   robot_vel_world_sub = None
 
-
   # Robot pose ref pub
   robot_pose_ref_pub = None
   # Robot velocity ref pub
   robot_vel_world_ref_pub = None
   #
   robot_vel_cmd_ref_pub = None
-
 
   #
   config_param = None
@@ -83,34 +75,39 @@ class ArsPathFollowerRos:
 
   #########
 
-  def __init__(self):
-
+  def __init__(self, node_name='ars_path_follower_node'):
+    # Init ROS
+    super().__init__(node_name)
 
     # Motion controller
     self.path_follower = ArsPathFollower()
 
+    #
+    self.__init(node_name)
 
     # end
     return
 
 
-  def init(self, node_name='ars_path_follower_node'):
-    #
+  def __init(self, node_name='ars_path_follower_node'):
 
-    # Init ROS
-    rospy.init_node(node_name, anonymous=True)
-
-    
     # Package path
-    pkg_path = rospkg.RosPack().get_path('ars_path_follower')
+    try:
+      pkg_path = get_package_share_directory('ars_path_follower')
+      self.get_logger().info(f"The path to the package is: {pkg_path}")
+    except ModuleNotFoundError:
+      self.get_logger().info("Package not found")
     
 
     #### READING PARAMETERS ###
     
     # Config param
     default_config_param_yaml_file_name = os.path.join(pkg_path,'config','config_path_follower.yaml')
-    config_param_yaml_file_name_str = rospy.get_param('~config_param_path_follower_yaml_file', default_config_param_yaml_file_name)
-    print(config_param_yaml_file_name_str)
+    # Declare the parameter with a default value
+    self.declare_parameter('config_param_path_follower_yaml_file', default_config_param_yaml_file_name)
+    # Get the parameter value
+    config_param_yaml_file_name_str = self.get_parameter('config_param_path_follower_yaml_file').get_parameter_value().string_value
+    self.get_logger().info(config_param_yaml_file_name_str)
     self.config_param_yaml_file_name = os.path.abspath(config_param_yaml_file_name_str)
 
     ###
@@ -123,10 +120,10 @@ class ArsPathFollowerRos:
         self.config_param = yaml.load(file, Loader=SafeLoader)['path_follower']
 
     if(self.config_param is None):
-      print("Error loading config param path follower")
+      self.get_logger().info("Error loading config param path follower")
     else:
-      print("Config param path follower:")
-      print(self.config_param)
+      self.get_logger().info("Config param path follower:")
+      self.get_logger().info(str(self.config_param))
 
 
     # Parameters
@@ -148,30 +145,30 @@ class ArsPathFollowerRos:
     # Subscribers
 
     #
-    self.robot_traj_sub = rospy.Subscriber('robot_trajectory_ref', Path, self.robotTrajectoryCallback)
+    self.robot_traj_sub = self.create_subscription(Path, 'robot_trajectory_ref', self.robotTrajectoryCallback, qos_profile=10)
 
     # 
-    self.robot_pose_sub = rospy.Subscriber('robot_pose', PoseStamped, self.robotPoseCallback)
+    self.robot_pose_sub = self.create_subscription(PoseStamped, 'robot_pose', self.robotPoseCallback, qos_profile=10)
     #
-    self.robot_vel_world_sub = rospy.Subscriber('robot_velocity_world', TwistStamped, self.robotVelWorldCallback)
+    self.robot_vel_world_sub = self.create_subscription(TwistStamped, 'robot_velocity_world', self.robotVelWorldCallback, qos_profile=10)
     
 
 
     # Publishers
 
     # 
-    self.robot_pose_ref_pub = rospy.Publisher('robot_pose_ctr_ref', PoseStamped, queue_size=1)
+    self.robot_pose_ref_pub = self.create_publisher(PoseStamped, 'robot_pose_ctr_ref', qos_profile=10)
     #
-    self.robot_vel_world_ref_pub = rospy.Publisher('robot_velocity_world_ctr_ref', TwistStamped, queue_size=1)
+    self.robot_vel_world_ref_pub = self.create_publisher(TwistStamped, 'robot_velocity_world_ctr_ref', qos_profile=10)
     #
-    self.robot_vel_cmd_ref_pub = rospy.Publisher('robot_ctr_cmd_ref', TwistStamped, queue_size=1)
+    self.robot_vel_cmd_ref_pub = self.create_publisher(TwistStamped, 'robot_ctr_cmd_ref', qos_profile=10)
 
 
 
 
     # Timers
     #
-    self.ctr_cmd_loop_timer = rospy.Timer(rospy.Duration(1.0/self.ctr_cmd_loop_freq), self.ctrCommandLoopTimerCallback)
+    self.ctr_cmd_loop_timer = self.create_timer(1.0/self.ctr_cmd_loop_freq, self.ctrCommandLoopTimerCallback)
 
 
     # End
@@ -180,7 +177,7 @@ class ArsPathFollowerRos:
 
   def run(self):
 
-    rospy.spin()
+    rclpy.spin(self)
 
     return
 
@@ -269,7 +266,7 @@ class ArsPathFollowerRos:
 
     robot_pose_ref_msg = PoseStamped()
 
-    robot_pose_ref_msg.header.stamp = time_stamp_current
+    robot_pose_ref_msg.header.stamp = time_stamp_current.to_msg()
     robot_pose_ref_msg.header.frame_id = self.world_frame
 
     robot_pose_ref_msg.pose.position.x = robot_posi_ref[0]
@@ -295,7 +292,7 @@ class ArsPathFollowerRos:
 
     robot_velo_ref_msg = TwistStamped()
 
-    robot_velo_ref_msg.header.stamp = time_stamp_current
+    robot_velo_ref_msg.header.stamp = time_stamp_current.to_msg()
     robot_velo_ref_msg.header.frame_id = self.world_frame
 
     robot_velo_ref_msg.twist.linear.x = robot_velo_lin_world_ref[0]
@@ -320,7 +317,7 @@ class ArsPathFollowerRos:
 
     robot_velo_cmd_ref_msg = TwistStamped()
 
-    robot_velo_cmd_ref_msg.header.stamp = time_stamp_current
+    robot_velo_cmd_ref_msg.header.stamp = time_stamp_current.to_msg()
     robot_velo_cmd_ref_msg.header.frame_id = self.world_frame
 
     robot_velo_cmd_ref_msg.twist.linear.x = robot_velo_lin_cmd_ref[0]
@@ -338,10 +335,10 @@ class ArsPathFollowerRos:
     return
   
 
-  def ctrCommandLoopTimerCallback(self, timer_msg):
+  def ctrCommandLoopTimerCallback(self):
 
     # Get time
-    time_stamp_current = rospy.Time.now()
+    time_stamp_current = self.get_clock().now()
 
     #
     self.path_follower.pathFollowerLoop(time_stamp_current)

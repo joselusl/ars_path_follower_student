@@ -3,24 +3,14 @@
 import numpy as np
 from numpy import *
 
-import os
-
 
 import threading
-from threading import Timer, Thread, Event
 
-
-# ROS
-
-import rospy
-
+from rclpy.logging import get_logger
 
 
 #
-import ars_lib_helpers
-
-
-
+import ars_lib_helpers.ars_lib_helpers as ars_lib_helpers
 
 
 
@@ -75,6 +65,9 @@ class ArsPathFollower:
   tol_angle = 0.0
   
 
+  # ROS2 logger
+  logger = None
+
 
 
   #########
@@ -124,6 +117,9 @@ class ArsPathFollower:
     self.tol_posi = 0.0
     self.tol_angle = 0.0
 
+    #
+    self.logger = get_logger('ars_path_follower')
+
 
     # End
     return
@@ -158,7 +154,7 @@ class ArsPathFollower:
 
   def setRobotTrajectory(self, robot_traj):
 
-    print("New Trajectory set!")
+    self.logger.info("New Trajectory set!")
 
     self.flag_set_robot_traj = True
 
@@ -179,7 +175,7 @@ class ArsPathFollower:
 
       if(self.flag_set_robot_hover == False):
 
-        print("Path follower: Setting hover mode")
+        self.logger.info("New Trajectory set!")
 
         self.flag_set_robot_pose_ref = True
         self.robot_posi_ref = self.robot_posi
@@ -203,7 +199,7 @@ class ArsPathFollower:
 
     if(self.flag_set_robot_hover == True):
 
-      print("Path follower: Setting move mode")
+      self.logger.info("New Trajectory set!")
 
       self.flag_set_robot_hover = False
 
@@ -211,7 +207,7 @@ class ArsPathFollower:
 
 
   def timeoutReachRobotTrajWaypoint(self):
-    print("Waypoint " + str(self.robot_traj_waypoint_idx) + " Timed Out")
+    self.logger.info("Waypoint " + str(self.robot_traj_waypoint_idx) + " Timed Out")
     self.advanceRobotTrajWaypoint()
     return
 
@@ -226,7 +222,7 @@ class ArsPathFollower:
       # Advance waypoint
       self.robot_traj_waypoint_idx+=1
       if(self.robot_traj_waypoint_idx < len(self.robot_traj)):
-        print("Waypoint " + str(self.robot_traj_waypoint_idx) + " Next")
+        self.logger.info("Waypoint " + str(self.robot_traj_waypoint_idx) + " Next")
 
       # Set timeout timer
       ###### TODO By student
